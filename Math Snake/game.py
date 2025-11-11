@@ -1,3 +1,10 @@
+"""
+Main game module for Math Snake.
+
+This module contains the Game class which manages the core game loop,
+collision detection, number collection, and win/lose conditions.
+"""
+
 import pygame
 from config import *
 from menu import get_difficulty
@@ -9,13 +16,41 @@ from screens import you_win_screen, you_lose_screen, death_animation, victory_an
 from sounds import SoundManager
 
 class Game:
+    """
+    Main game class that manages the Math Snake game loop and state.
+    
+    Handles initialization, game state management, collision detection,
+    and coordinates between different game components.
+    """
+    
     def __init__(self):
+        """Initialize the game with clock, running state, and sound manager."""
         self.clock = pygame.time.Clock()
         self.running = True
         self.sound_manager = SoundManager()
         
     def initialize_game(self, difficulty):
-        """Initialize or reset game state"""
+        """
+        Initialize a new game session with the specified difficulty.
+        
+        Creates a math question, initializes the snake, generates number tiles,
+        and ensures no overlapping positions between game elements.
+        
+        Args:
+            difficulty (str): The difficulty level ('Easy', 'Medium', 'Hard', 'Insane')
+            
+        Returns:
+            dict: Game state containing:
+                - answer: The correct answer to the math expression
+                - snake: The Snake object
+                - nums: List of Number objects (0-9)
+                - arr: List tracking collected digits
+                - idx: Current index in the answer string
+                - isNegative: Whether the answer is negative
+                - ansLen: Length of the answer (excluding negative sign)
+                - currentNumToFind: The Number object the player needs to find next
+                - time: Game timer
+        """
         question_window = QuestionWindow(difficulty)
         answer = question_window.display_expression()
         
@@ -58,11 +93,20 @@ class Game:
             'isNegative': isNegative,
             'ansLen': ansLen,
             'currentNumToFind': currentNumToFind,
-            'game_over': False,
             'time': 0
         }
     
     def run(self):
+        """
+        Main game loop that handles rendering, input, collision detection, and game logic.
+        
+        The loop continues until the player quits. It manages:
+        - Snake movement and collision detection
+        - Number collection and validation
+        - Win/lose conditions
+        - Screen updates and animations
+        - Sound effects
+        """
         difficulty = get_difficulty()
         game_state = self.initialize_game(difficulty)
         foundDifficulty = True
@@ -106,78 +150,62 @@ class Game:
                 foundDifficulty = False
                 continue
             
-            if not game_state['game_over']:
-                for num in game_state['nums']:
-                    num.draw_Number(BLACK, SCREEN)
+            for num in game_state['nums']:
+                num.draw_Number(BLACK, SCREEN)
+                
+                if num.collision(game_state['snake'].row, game_state['snake'].col):
+                    # play eat sound
+                    self.sound_manager.play('eat')
                     
-                    if num.collision(game_state['snake'].row, game_state['snake'].col):
-                        # play eat sound
-                        self.sound_manager.play('eat')
-                        
-                        num.createNewNumber(WHITE, SCREEN, game_state['snake'].visited)
-                        
-                        # check if new position conflicts with other numbers
-                        other_nums_positions = set()
-                        for other_num in game_state['nums']:
-                            if other_num != num:
-                                other_nums_positions.add((other_num.row, other_num.col))
-                        
-                        # keep repositioning if it overlaps with another number or snake
-                        while (num.row, num.col) in other_nums_positions or (num.row, num.col) in game_state['snake'].visited:
-                            num.createNewPos(game_state['snake'].visited)
-                        
-                        game_state['arr'].append(str(num.number))
+                    # build occupied set once
+                    occupied = set(game_state['snake'].visited)
+                    for other_num in game_state['nums']:
+                        if other_num != num:
+                            occupied.add((other_num.row, other_num.col))
                     
-                        if game_state['idx'] < game_state['ansLen']:
-                            if num.number == str(game_state['answer'])[game_state['idx']]:
-                                # correct number - play success sound
-                                self.sound_manager.play('correct')
-                                game_state['idx'] += 1
-                                if game_state['idx'] < game_state['ansLen']:
+                    num.createNewNumber(WHITE, SCREEN, occupied)
+                    
+                    game_state['arr'].append(str(num.number))
+                
+                    if game_state['idx'] < game_state['ansLen']:
+                        if num.number == str(game_state['answer'])[game_state['idx']]:
+                            # correct number - play success sound
+                            self.sound_manager.play('correct')
+                            game_state['idx'] += 1
+                            if game_state['idx'] <= game_state['ansLen']:
+                                if game_state['idx'] < len(str(game_state['answer'])):
                                     game_state['currentNumToFind'] = game_state['nums'][
                                         int(str(game_state['answer'])[game_state['idx']])
                                     ]
-                            else:
-                                # wrong number eaten - trigger death animation
-                                self.sound_manager.play('wrong')
-                                death_animation(SCREEN)
-                                you_lose_screen()
-                                foundDifficulty = False
-                                continue  # skip rest of loop
+                        else:
+                            # wrong number eaten - trigger death animation
+                            self.sound_manager.play('wrong')
+                            death_animation(SCREEN)
+                            you_lose_screen()
+                            foundDifficulty = False
+                            break  # skip rest of loop
+                    
+                    if len(game_state['arr']) == game_state['ansLen']:
+                        print(f"Answer complete! arr: {''.join(game_state['arr'])}, answer: {game_state['answer']}")  # Debug
+                        final_ans = (int("-" + "".join(game_state['arr'])) if game_state['isNegative'] else int("".join(game_state['arr'])))
                         
-                        if len(game_state['arr']) == game_state['ansLen']:
-                            print(f"Answer complete! arr: {''.join(game_state['arr'])}, answer: {game_state['answer']}")  # Debug
-                            final_ans = (int("-" + "".join(game_state['arr'])) if game_state['isNegative'] else int("".join(game_state['arr'])))
-                            
-                            print(f"Final answer: {final_ans}, Expected: {int(game_state['answer'])}")  # Debug
-                            if final_ans == int(game_state['answer']):
-                                print("WIN CONDITION MET - Starting victory animation")  # Debug
-                                self.sound_manager.play('victory')
-                                victory_animation(SCREEN)
-                                you_win_screen()
-                                foundDifficulty = False
-                                continue
-                            else:
-                                self.sound_manager.play('wrong')
-                                death_animation(SCREEN)
-                                you_lose_screen()
-                                foundDifficulty = False
-                                continue
+                        print(f"Final answer: {final_ans}, Expected: {int(game_state['answer'])}")  # Debug
+                        if final_ans == int(game_state['answer']):
+                            print("WIN CONDITION MET - Starting victory animation")  # Debug
+                            self.sound_manager.play('victory')
+                            victory_animation(SCREEN)
+                            you_win_screen()
+                            foundDifficulty = False
+                            break
+                        else:
+                            self.sound_manager.play('wrong')
+                            death_animation(SCREEN)
+                            you_lose_screen()
+                            foundDifficulty = False
+                            break
             
             # draw grid lines with animation
             draw_lines(SQUARE_PER_ROW, SQUARE_PER_COL)
-            
-            # check collisions
-            if game_state['snake'].collisionWithSelf() or game_state['snake'].collideWall:
-                death_animation(SCREEN)
-                you_lose_screen()
-                foundDifficulty = False
-                continue
-            
-            if game_state['game_over']:
-                you_lose_screen()
-                foundDifficulty = False
-                continue
             
             # draw snake
             game_state['snake'].draw_head(BLUE, SCREEN)

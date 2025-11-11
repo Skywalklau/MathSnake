@@ -1,10 +1,31 @@
+"""
+Screen animations and end-game displays for Math Snake.
+
+This module contains all visual feedback screens including death and victory
+animations, as well as win/lose screens with restart options.
+"""
+
 import pygame
 import random
 import math
 from config import *
 
 def death_animation(screen):
-    """Cool death animation with particle explosion and screen shake"""
+    """
+    Display an explosive death animation when the player loses.
+    
+    Creates a dramatic explosion effect with:
+    - 100 particles exploding outward from screen center
+    - Screen shake effect for the first 20 frames
+    - Red fade overlay that intensifies over time
+    - Particles affected by gravity and fading
+    - "WRONG!" text appearing after 40 frames
+    
+    The animation runs for 2 seconds (120 frames at 60 FPS).
+    
+    Args:
+        screen (pygame.Surface): The game screen to draw the animation on
+    """
     # create explosion particles
     particles = []
     center_x, center_y = SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2
@@ -17,7 +38,7 @@ def death_animation(screen):
             'y': center_y,
             'vx': math.cos(angle) * speed,
             'vy': math.sin(angle) * speed,
-            'color': random.choice([RED, YELLOW, (255, 165, 0), WHITE, (255, 100, 100)]),
+            'color': random.choice([RED, YELLOW, ORANGE, WHITE, REDDISH_PINK]),
             'size': random.randint(3, 8),
             'life': 60,
             'fade': random.uniform(0.8, 1.2)
@@ -61,11 +82,10 @@ def death_animation(screen):
         
         # "WRONG!" text appears
         if frame > 40:
-            wrong_text = HEADER_1.render("WRONG!", True, WHITE)
+            wrong_surface = HEADER_1.render("WRONG!", True, WHITE)
             text_alpha = min(255, (frame - 40) * 10)
-            wrong_surface = wrong_text.copy()
             wrong_surface.set_alpha(text_alpha)
-            screen.blit(wrong_surface, (SCREEN_WIDTH // 2 - wrong_text.get_width() // 2, SCREEN_HEIGHT // 3))
+            screen.blit(wrong_surface, (SCREEN_WIDTH // 2 - wrong_surface.get_width() // 2, SCREEN_HEIGHT // 3))
         
         pygame.display.update()
         clock.tick(60)
@@ -75,17 +95,29 @@ def death_animation(screen):
                 pygame.quit()
 
 def victory_animation(screen):
-    """Epic victory animation with fireworks and celebration effects"""
+    """
+    Display a celebratory fireworks animation when the player wins.
+    
+    Creates a spectacular victory display with:
+    - Color-shifting gradient background
+    - Fireworks that launch upward and explode into particles
+    - 40 particles per explosion with gravity effects
+    - Random confetti falling across the screen
+    - Pulsing "VICTORY!" text with shadow effect in gold
+    
+    The animation runs for 2 seconds (120 frames at 60 FPS).
+    Fireworks spawn every 8 frames with random colors from a vibrant palette.
+    
+    Args:
+        screen (pygame.Surface): The game screen to draw the animation on
+    """
     print("Victory animation started!")  # Debug
     # create fireworks
     fireworks = []
-    confetti = []
     clock = pygame.time.Clock()
     
     # victory text with scaling effect (2s)
     for frame in range(120):
-        if frame % 30 == 0:
-            print(f"Victory animation frame: {frame}")  # Debug
         # gradient background that shifts colors
         time_factor = frame / 120
         r = max(0, min(255, int(50 + 100 * math.sin(time_factor * math.pi))))
@@ -155,7 +187,7 @@ def victory_animation(screen):
                     fireworks.remove(firework)
         
         # random confetti
-        for i in range(5):
+        for _ in range(5):
             x = random.randint(0, SCREEN_WIDTH)
             y = random.randint(0, 3*SCREEN_HEIGHT//4)
             confetti_color = random.choice([GOLD, RED, GREEN, BLUE, PINK, YELLOW])
@@ -190,6 +222,15 @@ def victory_animation(screen):
                 return
 
 def you_win_screen():
+    """
+    Display the victory screen with restart and quit options.
+    
+    Shows a congratulatory message and waits for player input:
+    - Press R to restart the game
+    - Press Q to quit the game
+    
+    This function blocks until the player makes a choice.
+    """
     win_message = HEADER_1.render("You Win!", True, RED)
     restart_message = HEADER_1.render("Press R to Restart", True, BLACK)
     quit_message = HEADER_1.render("Press Q to Quit", True, BLACK)
@@ -213,6 +254,15 @@ def you_win_screen():
                     return
 
 def you_lose_screen():
+    """
+    Display the game over screen with restart and quit options.
+    
+    Shows a loss message and waits for player input:
+    - Press R to restart the game
+    - Press Q to quit the game
+    
+    This function blocks until the player makes a choice.
+    """
     lose_message = HEADER_1.render("You Lost!", True, RED)
     restart_message = HEADER_1.render("Press R to Restart", True, BLACK)
     quit_message = HEADER_1.render("Press Q to Quit", True, BLACK)

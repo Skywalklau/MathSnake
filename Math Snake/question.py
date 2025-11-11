@@ -1,3 +1,10 @@
+"""
+Question generation and display module for Math Snake.
+
+This module creates difficulty-based math expressions and displays them
+with an animated countdown timer and interactive star field.
+"""
+
 import pygame
 import random
 import time
@@ -6,28 +13,55 @@ from random import randint, choice
 from config import *
 
 class QuestionWindow:
+    """
+    Manages math expression generation and display based on difficulty level.
+    
+    Creates timed challenge screens with animated backgrounds where players
+    must memorize the expression and its answer before gameplay begins.
+    """
+    
     def __init__(self, difficulty):
+        """
+        Initialize the question window with a difficulty level.
+        
+        Args:
+            difficulty (str): The difficulty level ('Easy', 'Medium', 'Hard', 'Insane')
+        """
         self.difficulty = difficulty
         self.mathSymbols = ["+", "-", "*"]
     
     def createEasy(self):
-        varCount = randint(2, 4)
+        """
+        Generate an easy-level math expression.
+        
+        Creates expressions with 2-3 numbers in range 1-99,
+        using only addition and subtraction.
+        
+        Returns:
+            str: A math expression string (e.g., "42 + 17" or "65 - 23 + 11")
+        """
+        varCount = randint(2, 3)
         def limit(): return randint(1, 99)
         expression = ""
 
         if varCount == 2:
             expression = f"{limit()} {self.mathSymbols[randint(0, 1)]} {limit()}"
-        elif varCount == 3:
-            expression = f"{limit()} {self.mathSymbols[randint(0, 1)]} {limit()} " \
-                         f"{self.mathSymbols[randint(0, 1)]} {limit()}"
         else:
             expression = f"{limit()} {self.mathSymbols[randint(0, 1)]} {limit()} " \
-                         f"{self.mathSymbols[randint(0, 1)]} {limit()} " \
                          f"{self.mathSymbols[randint(0, 1)]} {limit()}"
 
         return expression
     
     def createMedium(self):
+        """
+        Generate a medium-level math expression.
+        
+        Creates expressions with 2-4 numbers in range 100-999,
+        using addition and subtraction.
+        
+        Returns:
+            str: A math expression string
+        """
         varCount = randint(2, 4)
         def limit(): return randint(100, 999)
         expression = ""
@@ -45,6 +79,15 @@ class QuestionWindow:
         return expression
 
     def createHard(self):
+        """
+        Generate a hard-level math expression.
+        
+        Creates expressions with 2-4 numbers (excluding -100 to +100),
+        using addition, subtraction, and multiplication with parentheses.
+        
+        Returns:
+            str: A math expression string with parentheses
+        """
         varCount = randint(2, 4)
         def limit(): return choice([randint(-999, -101), randint(101, 999)])
         expression = ""
@@ -62,6 +105,15 @@ class QuestionWindow:
         return expression
 
     def createInsane(self):
+        """
+        Generate an insane-level math expression.
+        
+        Creates expressions with 3-4 large numbers (excluding -100 to +100),
+        using all operations including multiplication with parentheses.
+        
+        Returns:
+            str: A complex math expression string with multiple parentheses
+        """
         varCount = randint(3, 4)
         def limit(): return choice([randint(-9999, -101), randint(101, 9999)])
         expression = ""
@@ -77,6 +129,24 @@ class QuestionWindow:
         return expression
 
     def display_expression(self):
+        """
+        Display the math expression with a countdown timer and interactive star field.
+        
+        Creates a timed challenge screen where:
+        - Stars fall and can be clicked to create burst effects
+        - A progress bar shows remaining time
+        - Colors change based on urgency (green -> yellow -> red)
+        - Timer pulses when time is running out
+        
+        Time limits by difficulty:
+        - Easy: 10 seconds
+        - Medium: 20 seconds
+        - Hard: 35 seconds
+        - Insane: 70 seconds
+        
+        Returns:
+            int: The evaluated answer to the expression, or "undefined" if division by zero
+        """
         expression = ""
 
         if self.difficulty == "Easy": 
@@ -98,7 +168,6 @@ class QuestionWindow:
         stars = [{'x': random.randint(0, SCREEN_WIDTH),
                 'y': random.randint(-SCREEN_HEIGHT, 0),
                 'size': random.randint(10, 15),
-                'brightness': random.randint(200, 255),
                 'color': YELLOW,
                 'hovered': False,
                 'burst': False,
@@ -113,16 +182,16 @@ class QuestionWindow:
             trail_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
             trail_surface.fill((0, 0, 0, 20))
             SCREEN.blit(trail_surface, (0, 0))
-
+            
             mouse_x, mouse_y = pygame.mouse.get_pos()
             for star in stars:
                 if star['burst']:
                     for particle in star['burst_particles']:
                         particle['x'] += particle['vx']
                         particle['y'] += particle['vy']
-                        particle['alpha'] -= 10
+                        particle['life'] -= 10
                         pygame.draw.circle(SCREEN, particle['color'], (int(particle['x']), int(particle['y'])), particle['size'])
-                        if particle['alpha'] <= 0:
+                        if particle['life'] <= 0:
                             star['burst_particles'].remove(particle)
                     continue
 
@@ -142,7 +211,7 @@ class QuestionWindow:
                                 'vy': random.randint(-3, 3),
                                 'size': random.randint(1, 3),
                                 'color': (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255)),
-                                'alpha': 255
+                                'life': 260
                             }
                             star['burst_particles'].append(particle)
                 else:
@@ -198,13 +267,13 @@ class QuestionWindow:
                 timer_font = pygame.font.Font("freesansbold.ttf", int(SCREEN_WIDTH * 0.035))
             
             timerText = timer_font.render(timer_text + "s", True, timer_color)
-            SCREEN.blit(timerText, (timer_box_x + 15, timer_box_y + 8))
+            SCREEN.blit(timerText, (timer_box_x * 1.5, timer_box_y * 1.3))
             
             # progress bar
             bar_width = timer_box_width * 0.9
             bar_height = timer_box_height * 0.2
             bar_x = timer_box_x * 1.4
-            bar_y = timer_box_y + timer_box_height - timer_box_height * 0.3
+            bar_y = timer_box_y + timer_box_height * 0.7
             
             
             # filled portion

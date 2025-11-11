@@ -1,3 +1,10 @@
+"""
+Menu system for Math Snake.
+
+This module handles the main menu display with animated galaxy background
+and difficulty selection.
+"""
+
 import pygame
 import random
 import math
@@ -20,6 +27,12 @@ for i in range(STAR_COUNT):
     })
 
 def draw_galaxy():
+    """
+    Draw an animated spiral galaxy background effect.
+    
+    Stars orbit around the screen center at varying speeds and radii,
+    creating a dynamic space-like atmosphere for the menu.
+    """
     center_x, center_y = SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2
     
     for star in galaxy_stars:
@@ -36,6 +49,17 @@ def draw_galaxy():
         SCREEN.blit(star_surface, (x - star['size'], y - star['size']))
 
 def draw_menu():
+    """
+    Draw the main menu screen with difficulty selection buttons.
+    
+    Creates an animated background with color-shifting gradient and orbiting stars.
+    Displays four difficulty buttons (Easy, Medium, Hard, Insane) that highlight
+    on hover with visual effects.
+    
+    Returns:
+        tuple: Four pygame.Rect objects representing the clickable button areas
+            (easy_rect, medium_rect, hard_rect, insane_rect)
+    """
     PADDING = int(SCREEN_WIDTH * 0.05)
     SPACING = int(SCREEN_HEIGHT * 0.1)
 
@@ -72,7 +96,7 @@ def draw_menu():
         insane_button.get_height() + PADDING
     )
 
-    time_elapsed = time.time() % 100
+    time_elapsed = time.time()
     r = max(0, min(255, int(100 + 50 * math.sin(time_elapsed))))
     g = max(0, min(255, int(100 + 50 * math.cos(time_elapsed))))
     b = max(0, min(255, int(150 + 50 * math.sin(time_elapsed / 2))))
@@ -128,6 +152,15 @@ def draw_menu():
     return easy_rect, medium_rect, hard_rect, insane_rect
 
 def get_difficulty():
+    """
+    Display the main menu and wait for the player to select a difficulty level.
+    
+    Continuously renders the menu and checks for mouse clicks on difficulty buttons.
+    Returns the selected difficulty as a string.
+    
+    Returns:
+        str: The selected difficulty level ('Easy', 'Medium', 'Hard', or 'Insane')
+    """
     run = True
     while run:
         for event in pygame.event.get():
